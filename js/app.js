@@ -1,6 +1,5 @@
-'use strict';
 
-var dvidApp = angular.module('dvidApp', []);
+var dvidApp = angular.module('dvidApp', ['ngRoute']);
 /*
 dvidApp.factory('dvidServer', function($http) {
     return {
