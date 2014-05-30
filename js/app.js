@@ -27,54 +27,13 @@ dvidApp.directive('control3d', function() {
             var gui = new dat.GUI({ autoPlace: false });
             controlarea.append(gui.domElement);
 
-            // Source Options
-            var source_folder = gui.addFolder("Source");
+            // Surface Options
+            var view_folder = gui.addFolder("View Options");
 
-            var h_dataset = source_folder.add(DVID.dataset, 'uuid', DVID.uuids);
-            var h_imageName = source_folder.add(DVID.dataset, 'imageName', DVID.dataset.availVoxels);
+ 			var h_alpha = view_folder.add(DVID.cutView3d, 'bodyAlpha', 0.0, 1.0).step(0.01);
+            var h_bodyColor = view_folder.addColor(DVID.cutView3d, 'sparseVolumeColor');
+            var h_directionalLight = view_folder.add(DVID.cutView3d, 'directionalLight', 0.2, 2.0).step(0.05);
 
-            h_dataset.onChange(function(value) {
-                var datasetNum = -1;
-                for (var i = 0; i < DVID.uuids.length; i++) {
-                    if (value === DVID.uuids[i]) {
-                        datasetNum = i;
-                        break;
-                    }
-                }
-                if (datasetNum >= 0) {
-                    DVID.changeDataset(datasetNum);
-                    DVID.cutView3d.resetDataset();
-                    DVID.cutView3d.resetPlanes();
-                    DVID.cutView3d.refresh('xy');
-                    DVID.cutView3d.refresh('xz');
-                    DVID.cutView3d.refresh('yz');
-                }
-            });
-
-            h_imageName.onChange(function(value) {
-                DVID.cutView3d.refresh('xy');
-                DVID.cutView3d.refresh('xz');
-                DVID.cutView3d.refresh('yz');
-            });
-
-            // Sparse Volume Options
-            var sparsevol_folder = gui.addFolder("Sparse Volumes");
-
-            var h_labelmapName = sparsevol_folder.add(DVID.dataset, 'labelmapName', DVID.dataset.availLabelmaps);
-            var h_showBodies = sparsevol_folder.add(DVID.cutView3d, 'showBodies');
-            var h_pickBodies = sparsevol_folder.add(DVID.cutView3d, 'pickBodies');
-			var h_alpha = sparsevol_folder.add(DVID.cutView3d, 'bodyAlpha', 0.0, 1.0).step(0.01);
-            var h_bodyColor = sparsevol_folder.addColor(DVID.cutView3d, 'sparseVolumeColor');
-
-            h_showBodies.onChange(function(value) {
-                DVID.cutView3d.showSparseVolume(value);
-            });
-
-            h_pickBodies.onChange(function(on) {
-                if (on) {
-                    DVID.cutView3d.showSparseVolume(true);
-                }
-            });
 			
 			h_alpha.onChange(function(value) {
                 console.log("alpha:", value, "particles in 3d cut view: ", DVID.cutView3d.particles);
@@ -83,49 +42,8 @@ dvidApp.directive('control3d', function() {
                 DVID.cutView3d.particles.material.uniforms.uBodyAlpha = { type: "f", value: value };
                 DVID.cutView3d.scene.add(DVID.cutView3d.particles);
 			});
-
-            // Rendering Options
-            var render_folder = gui.addFolder("Rendering");
-
-            var h_centerX = render_folder.add(DVID.cutView3d.center, 'x', DVID.cutView3d.minPt.x, DVID.cutView3d.maxPt.x).step(1.0);
-            var h_centerY = render_folder.add(DVID.cutView3d.center, 'y', DVID.cutView3d.minPt.y, DVID.cutView3d.maxPt.y).step(1.0);
-            var h_centerZ = render_folder.add(DVID.cutView3d.center, 'z', DVID.cutView3d.minPt.z, DVID.cutView3d.maxPt.z).step(1.0);
-            var h_imageSize = render_folder.add(DVID.cutView3d, 'viewRadius', 100, 500).step(1.0);
-            var h_directionalLight = render_folder.add(DVID.cutView3d, 'directionalLight', 0.2, 2.0).step(0.05);
-            var h_tiles = render_folder.add(DVID.cutView3d, 'showTiles');
-            var h_axesOnly = render_folder.add(DVID.cutView3d, 'showAxesOnly');
-            var h_showChunks = render_folder.add(DVID.cutView3d, 'showingChunks');
-			
-            h_centerX.onChange(function(value) {
-                DVID.cutView3d.changedCenter();
-            });
-            h_centerY.onChange(function(value) {
-                DVID.cutView3d.changedCenter();
-            });
-            h_centerZ.onChange(function(value) {
-                DVID.cutView3d.changedCenter();
-            });
-            h_imageSize.onChange(function(value) {
-                DVID.cutView3d.resetPlanes();
-
-                DVID.cutView3d.constrainPlane('xy');
-                DVID.cutView3d.constrainPlane('xz');
-                DVID.cutView3d.constrainPlane('yz');
-
-                scope.lastImageSize = value;
-            });
             h_directionalLight.onChange(function(value) {
                 DVID.cutView3d.light.intensity = value;
-            });
-
-            h_axesOnly.onChange(function(value) {
-                DVID.cutView3d.refresh('xy');
-                DVID.cutView3d.refresh('xz');
-                DVID.cutView3d.refresh('yz');
-            });
-            
-            h_showChunks.onChange(function(value) {
-                DVID.cutView3d.refreshChunkView();
             });
         };
         scope.init();
@@ -200,7 +118,7 @@ dvidApp.directive('browser3d', function() {
 			container.appendChild(stats.domElement);
 
 			// Add the cutView3d window.
-            DVID.cutView3d = new DVID.CutView3D(renderwidth, renderheight, DVID.orientation3d, stats);
+            DVID.cutView3d = new DVID.CutView3D(scope.params, renderwidth, renderheight, DVID.orientation3d, stats);
             var domElement = DVID.cutView3d.getDomElement();
             container.appendChild(domElement);
 
@@ -213,10 +131,6 @@ dvidApp.directive('browser3d', function() {
             window.addEventListener( 'resize', onWindowResize, false );
 
             DVID.cutView3d.animate();
-
-            DVID.cutView3d.refresh('xy');
-            DVID.cutView3d.refresh('xz');
-            DVID.cutView3d.refresh('yz');
         }
 
         function onWindowResize() {

@@ -32,63 +32,6 @@ var DVID = {
         labelID: "0"       // unsigned 64-bit label to display body (0 = no display)
     },
 
-    // Returns true if a name matches one of the names in the list.
-    allowedType: function(data, typenames) {
-        if (data.hasOwnProperty('TypeService')) {
-            var typename = data.TypeService.Name;
-            for (var i = 0; i < typenames.length; i += 1) {
-                if (typename === typenames[i]) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    },
-
-    // Returns an array of data names for a dataset object.
-    getDataNames: function(dataMap, typenames) {
-        var names = [];
-        for (dataName in dataMap) {
-            if (this.allowedType(dataMap[dataName], typenames)) {
-                names.push(dataName);
-            }
-        }
-        return names;
-    },
-
-    // Returns an array of data names for this dataset index and with an optional data type (list of strings).
-    getAvailData: function(dataset, typenames) {
-        if (dataset.hasOwnProperty('Root') && dataset.DataMap) {
-            return this.getDataNames(dataset.DataMap, typenames);
-        }
-        return [];
-    },
-
-    changeDataset: function(datasetNum) {
-        console.log("Changing dataset to ", datasetNum, " of ", DVID.uuids.length);
-        if (DVID.uuids.length > datasetNum) {
-            DVID.dataset.uuid = DVID.uuids[datasetNum];
-            var dataset = DVID.datasets[datasetNum];
-            this.dataset.availVoxels = DVID.getAvailData(dataset, ['grayscale8', 'rgba8', 'grayscale16', 'multiscale2d']);
-            this.dataset.availLabels = DVID.getAvailData(dataset, ['labels32', 'labels64']);
-            this.dataset.availLabelmaps = DVID.getAvailData(dataset, ['labelmap'])
-            this.dataset.availQuadtrees = DVID.getAvailData(dataset, ['multiscale2d'])
-            if (this.dataset.availVoxels.length > 0) {
-                this.dataset.imageName = this.dataset.availVoxels[0];
-                this.changeDataImage(dataset, this.dataset.imageName);
-            }
-            if (this.dataset.availLabels.length > 0) {
-                this.dataset.labelName = this.dataset.availLabels[0];
-                this.dataset.labelID = "0";
-            }
-            if (this.dataset.availLabelmaps.length > 0) {
-                this.dataset.labelmapName = this.dataset.availLabelmaps[0];
-            }
-            if (this.dataset.availQuadtrees.length > 0) {
-                this.dataset.quadtreeName = this.dataset.availQuadtrees[0];
-            }
-        }
-    },
 
     changeDataImage: function(dataset, dataname) {
         console.log("changeDataImage: ", dataset, dataname);
@@ -151,8 +94,8 @@ var DVID = {
     },
 
     // Returns a URL to retrieve a subvolume given a coordinate.
-    surfaceByLabelUrl: function(dataname, label) {
-        return '/api/node/' + this.dataset.uuid + '/' + 'neurons' + '/surface/' + label;
+    surfaceByLabelUrl: function(uuid, dataname, label) {
+        return '/api/node/' + uuid + '/' + dataname + '/surface/' + label;
     },
 
     // Returns a URL to retrieve a subvolume given a coordinate.
